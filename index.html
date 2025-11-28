@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AeroPark Smart System - Accueil</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-brand">
+            <i class="fas fa-plane"></i>
+            <span>AeroPark</span>
+        </div>
+        <ul class="nav-links">
+            <li><a href="index.html" class="active"><i class="fas fa-home"></i> Accueil</a></li>
+            <li><a href="#" onclick="handleReserveClick(event)"><i class="fas fa-ticket-alt"></i> Réserver</a></li>
+            <li id="auth-links">
+                <a href="pages/login.html" class="btn btn-outline"><i class="fas fa-sign-in-alt"></i> Connexion</a>
+                <a href="pages/register.html" class="btn btn-primary"><i class="fas fa-user-plus"></i> Inscription</a>
+            </li>
+            <li id="user-menu" class="hidden">
+                <span class="user-name"></span>
+                <a href="#" class="btn btn-outline" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
+            </li>
+        </ul>
+        <div class="hamburger">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="hero">
+        <div class="hero-content">
+            <h1>Bienvenue sur <span class="highlight">AeroPark</span></h1>
+            <p>Système intelligent de gestion de parking aéroportuaire</p>
+            <a href="#" class="btn btn-large btn-primary" id="reserve-btn" onclick="handleReserveClick(event)">
+                <i class="fas fa-car"></i> Réserver une place
+            </a>
+        </div>
+        <div class="hero-illustration">
+            <i class="fas fa-parking"></i>
+        </div>
+    </header>
+
+    <!-- Stats Section -->
+    <section class="stats-section">
+        <div class="container">
+            <h2 class="section-title">État du Parking en Temps Réel</h2>
+            <div class="stats-grid">
+                <!-- Total Places -->
+                <div class="stat-card">
+                    <div class="stat-icon total">
+                        <i class="fas fa-warehouse"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-number" id="total-places">0</span>
+                        <span class="stat-label">Places Totales</span>
+                    </div>
+                </div>
+
+                <!-- Places Disponibles -->
+                <div class="stat-card">
+                    <div class="stat-icon available">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-number" id="available-places">0</span>
+                        <span class="stat-label">Places Disponibles</span>
+                    </div>
+                </div>
+
+                <!-- Places Occupées -->
+                <div class="stat-card">
+                    <div class="stat-icon occupied">
+                        <i class="fas fa-car"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-number" id="occupied-places">0</span>
+                        <span class="stat-label">Places Occupées</span>
+                    </div>
+                </div>
+
+                <!-- Taux d'occupation -->
+                <div class="stat-card">
+                    <div class="stat-icon rate">
+                        <i class="fas fa-chart-pie"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-number" id="occupation-rate">0%</span>
+                        <span class="stat-label">Taux d'Occupation</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Visual Indicator Section -->
+    <section class="visual-section">
+        <div class="container">
+            <h2 class="section-title">Indicateur Visuel</h2>
+            <div class="visual-indicator">
+                <div class="progress-ring">
+                    <svg class="progress-svg" viewBox="0 0 200 200">
+                        <circle class="progress-bg" cx="100" cy="100" r="90"></circle>
+                        <circle class="progress-bar" cx="100" cy="100" r="90" id="progress-circle"></circle>
+                    </svg>
+                    <div class="progress-text">
+                        <span id="progress-percent">0%</span>
+                        <small>Occupé</small>
+                    </div>
+                </div>
+                <div class="status-indicator" id="status-indicator">
+                    <div class="status-light"></div>
+                    <span class="status-text">Chargement...</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Parking Map Preview -->
+    <section class="map-section">
+        <div class="container">
+            <h2 class="section-title">Aperçu du Parking</h2>
+            <p class="section-subtitle">Vue en temps réel des places disponibles</p>
+            <div class="parking-map-preview" id="parking-preview">
+                <!-- Les places seront générées par JavaScript -->
+            </div>
+            <div class="map-legend">
+                <div class="legend-item">
+                    <span class="legend-color available"></span>
+                    <span>Disponible</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color occupied"></span>
+                    <span>Occupée</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color reserved"></span>
+                    <span>Réservée</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features-section">
+        <div class="container">
+            <h2 class="section-title">Nos Services</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <h3>Réservation 24/7</h3>
+                    <p>Réservez votre place à tout moment, depuis n'importe où.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3>Sécurité Maximale</h3>
+                    <p>Surveillance vidéo et contrôle d'accès sécurisé.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <h3>Accès Mobile</h3>
+                    <p>Interface responsive adaptée à tous les appareils.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <h3>Temps Réel</h3>
+                    <p>Informations actualisées en permanence.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <i class="fas fa-plane"></i>
+                    <span>AeroPark Smart System</span>
+                </div>
+                <p>&copy; 2025 AeroPark. Tous droits réservés.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/data.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/main.js"></script>
+    <script>
+        // Gestion du clic sur le bouton Réserver
+        function handleReserveClick(event) {
+            event.preventDefault();
+            
+            if (Auth.isLoggedIn()) {
+                // Utilisateur connecté -> page de réservation
+                window.location.href = 'pages/reservation.html';
+            } else {
+                // Utilisateur non connecté -> page de connexion avec message
+                showNotification('Veuillez vous connecter pour réserver une place.', 'warning');
+                setTimeout(() => {
+                    window.location.href = 'pages/login.html';
+                }, 1500);
+            }
+        }
+    </script>
+</body>
+</html>

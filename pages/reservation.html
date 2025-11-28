@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Réserver une place - AeroPark Smart System</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="reservation-page">
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-brand">
+            <i class="fas fa-plane"></i>
+            <span>AeroPark</span>
+        </div>
+        <ul class="nav-links">
+            <li><a href="../index.html"><i class="fas fa-home"></i> Accueil</a></li>
+            <li><a href="reservation.html" class="active"><i class="fas fa-ticket-alt"></i> Réserver</a></li>
+            <li id="auth-links">
+                <a href="login.html" class="btn btn-outline"><i class="fas fa-sign-in-alt"></i> Connexion</a>
+                <a href="register.html" class="btn btn-primary"><i class="fas fa-user-plus"></i> Inscription</a>
+            </li>
+            <li id="user-menu" class="hidden">
+                <span class="user-name"></span>
+                <a href="#" class="btn btn-outline" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
+            </li>
+        </ul>
+        <div class="hamburger">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </nav>
+
+    <main class="reservation-container">
+        <div class="container">
+            <!-- Header -->
+            <div class="reservation-header">
+                <h1><i class="fas fa-parking"></i> Réserver une Place</h1>
+                <p>Sélectionnez une place disponible sur le plan du parking</p>
+            </div>
+
+            <!-- Stats rapides -->
+            <div class="stats-grid" style="max-width: 600px; margin: 0 auto 2rem;">
+                <div class="stat-card">
+                    <div class="stat-icon available">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-number" id="available-count">0</span>
+                        <span class="stat-label">Places Disponibles</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon occupied">
+                        <i class="fas fa-car"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-number" id="occupied-count">0</span>
+                        <span class="stat-label">Places Occupées</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Légende -->
+            <div class="map-legend" style="margin-bottom: 2rem;">
+                <div class="legend-item">
+                    <span class="legend-color available"></span>
+                    <span>Disponible</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color occupied"></span>
+                    <span>Occupée</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color reserved"></span>
+                    <span>Réservée</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color" style="background: var(--primary-color);"></span>
+                    <span>Sélectionnée</span>
+                </div>
+            </div>
+
+            <!-- Grille du parking -->
+            <div class="parking-grid" id="parking-grid">
+                <!-- Générée par JavaScript -->
+            </div>
+
+            <!-- Formulaire de réservation -->
+            <div class="reservation-form-container hidden" id="reservation-form-container">
+                <h3><i class="fas fa-ticket-alt"></i> Confirmer la réservation</h3>
+                
+                <div class="selected-spot-info">
+                    <p>Place sélectionnée :</p>
+                    <span class="spot-number" id="selected-spot-display">-</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="vehicle-plate">Plaque d'immatriculation (optionnel)</label>
+                    <div class="input-icon">
+                        <i class="fas fa-car"></i>
+                        <input 
+                            type="text" 
+                            id="vehicle-plate" 
+                            placeholder="Ex: AB-123-CD"
+                            maxlength="12"
+                        >
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="duration">Durée estimée</label>
+                    <div class="input-icon">
+                        <i class="fas fa-clock"></i>
+                        <select id="duration" style="width: 100%; padding: 0.875rem 1rem 0.875rem 2.75rem; border: 2px solid var(--border-color); border-radius: var(--radius-md); font-size: 1rem; background: var(--bg-color);">
+                            <option value="1">1 heure</option>
+                            <option value="2">2 heures</option>
+                            <option value="4">4 heures</option>
+                            <option value="8">8 heures</option>
+                            <option value="24" selected>24 heures (1 jour)</option>
+                            <option value="48">48 heures (2 jours)</option>
+                            <option value="168">1 semaine</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 1rem;">
+                    <button type="button" class="btn btn-outline" id="cancel-selection" style="flex: 1;">
+                        <i class="fas fa-times"></i> Annuler
+                    </button>
+                    <button type="button" class="btn btn-success" id="confirm-reservation" style="flex: 1;">
+                        <i class="fas fa-check"></i> Confirmer
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mes réservations -->
+            <div class="user-reservations hidden" id="user-reservations">
+                <h3><i class="fas fa-list"></i> Mes Réservations</h3>
+                <div class="reservation-list" id="reservation-list">
+                    <!-- Générée par JavaScript -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <i class="fas fa-plane"></i>
+                    <span>AeroPark Smart System</span>
+                </div>
+                <p>&copy; 2025 AeroPark. Tous droits réservés.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="../js/data.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/main.js"></script>
+    <script>
+        // Vérifier si l'utilisateur est connecté au chargement
+        document.addEventListener('DOMContentLoaded', function() {
+            // Rediriger vers la connexion si non connecté
+            if (!Auth.isLoggedIn()) {
+                // Stocker l'URL de retour
+                sessionStorage.setItem('redirectAfterLogin', 'reservation.html');
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            // Si connecté, initialiser la page
+            initReservationPage();
+            initNavigation();
+        });
+
+        // Variables globales
+        let selectedSpot = null;
+
+        function initReservationPage() {
+            updateParkingGrid();
+            updateQuickStats();
+            loadUserReservations();
+
+            // Event listeners
+            document.getElementById('cancel-selection').addEventListener('click', clearSelection);
+            document.getElementById('confirm-reservation').addEventListener('click', confirmReservation);
+        }
+
+        function initNavigation() {
+            const hamburger = document.querySelector('.hamburger');
+            const navLinks = document.querySelector('.nav-links');
+
+            if (hamburger && navLinks) {
+                hamburger.addEventListener('click', () => {
+                    hamburger.classList.toggle('active');
+                    navLinks.classList.toggle('active');
+                });
+            }
+        }
+
+        // Mettre à jour les stats rapides
+        function updateQuickStats() {
+            const stats = ParkingData.getStats();
+            document.getElementById('available-count').textContent = stats.available;
+            document.getElementById('occupied-count').textContent = stats.occupied + stats.reserved;
+        }
+
+        // Générer la grille du parking
+        function updateParkingGrid() {
+            const container = document.getElementById('parking-grid');
+            container.innerHTML = '';
+            
+            const spots = ParkingData.getAllSpots();
+            const user = Auth.getCurrentUser();
+
+            spots.forEach(spot => {
+                const spotElement = document.createElement('div');
+                spotElement.className = `parking-spot ${spot.status}`;
+                spotElement.dataset.id = spot.id;
+                
+                // Vérifier si c'est une réservation de l'utilisateur courant
+                let icon = 'fa-car';
+                if (spot.status === 'available') {
+                    icon = 'fa-plus';
+                } else if (spot.status === 'reserved') {
+                    icon = 'fa-clock';
+                    if (user && spot.reservedBy === user.userId) {
+                        spotElement.classList.add('my-reservation');
+                    }
+                }
+
+                spotElement.innerHTML = `
+                    <i class="fas ${icon}"></i>
+                    <span>${spot.id}</span>
+                `;
+
+                // Event click uniquement pour les places disponibles
+                if (spot.status === 'available') {
+                    spotElement.addEventListener('click', () => selectSpot(spot.id));
+                }
+
+                container.appendChild(spotElement);
+            });
+
+            updateQuickStats();
+        }
+
+        // Sélectionner une place
+        function selectSpot(spotId) {
+            // Retirer la sélection précédente
+            document.querySelectorAll('.parking-spot.selected').forEach(el => {
+                el.classList.remove('selected');
+            });
+
+            // Sélectionner la nouvelle place
+            const spotElement = document.querySelector(`[data-id="${spotId}"]`);
+            if (spotElement) {
+                spotElement.classList.add('selected');
+            }
+
+            selectedSpot = spotId;
+            document.getElementById('selected-spot-display').textContent = spotId;
+            document.getElementById('reservation-form-container').classList.remove('hidden');
+            
+            // Scroll vers le formulaire
+            document.getElementById('reservation-form-container').scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'center' 
+            });
+        }
+
+        // Annuler la sélection
+        function clearSelection() {
+            document.querySelectorAll('.parking-spot.selected').forEach(el => {
+                el.classList.remove('selected');
+            });
+            selectedSpot = null;
+            document.getElementById('reservation-form-container').classList.add('hidden');
+        }
+
+        // Confirmer la réservation
+        function confirmReservation() {
+            if (!selectedSpot) {
+                showNotification('Veuillez sélectionner une place.', 'error');
+                return;
+            }
+
+            const user = Auth.getCurrentUser();
+            if (!user) {
+                showNotification('Veuillez vous connecter.', 'error');
+                return;
+            }
+
+            // Récupérer les infos supplémentaires
+            const vehiclePlate = document.getElementById('vehicle-plate').value;
+            const duration = document.getElementById('duration').value;
+
+            // Effectuer la réservation
+            const success = ParkingData.reserveSpot(selectedSpot, user.userId);
+
+            if (success) {
+                showNotification(`Place ${selectedSpot} réservée avec succès !`, 'success');
+                clearSelection();
+                updateParkingGrid();
+                loadUserReservations();
+            } else {
+                showNotification('Cette place n\'est plus disponible.', 'error');
+                updateParkingGrid();
+            }
+        }
+
+        // Charger les réservations de l'utilisateur
+        function loadUserReservations() {
+            const container = document.getElementById('user-reservations');
+            const list = document.getElementById('reservation-list');
+            
+            if (!Auth.isLoggedIn()) {
+                container.classList.add('hidden');
+                return;
+            }
+
+            const user = Auth.getCurrentUser();
+            const reservations = ParkingData.getUserReservations(user.userId);
+
+            if (reservations.length === 0) {
+                container.classList.remove('hidden');
+                list.innerHTML = `
+                    <div class="no-reservations">
+                        <i class="fas fa-inbox" style="font-size: 3rem; color: var(--text-light); margin-bottom: 1rem;"></i>
+                        <p>Vous n'avez aucune réservation active.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.classList.remove('hidden');
+            list.innerHTML = reservations.map(res => `
+                <div class="reservation-item">
+                    <div class="info">
+                        <span class="spot-name"><i class="fas fa-parking"></i> Place ${res.spotId}</span>
+                        <span class="date"><i class="fas fa-calendar"></i> Réservée le ${formatDate(res.createdAt)}</span>
+                    </div>
+                    <button class="btn btn-danger" onclick="cancelReservation('${res.spotId}')">
+                        <i class="fas fa-times"></i> Annuler
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // Annuler une réservation
+        function cancelReservation(spotId) {
+            const user = Auth.getCurrentUser();
+            if (!user) return;
+
+            if (confirm(`Voulez-vous vraiment annuler la réservation de la place ${spotId} ?`)) {
+                const success = ParkingData.cancelReservation(spotId, user.userId);
+                
+                if (success) {
+                    showNotification(`Réservation de la place ${spotId} annulée.`, 'success');
+                    updateParkingGrid();
+                    loadUserReservations();
+                } else {
+                    showNotification('Impossible d\'annuler cette réservation.', 'error');
+                }
+            }
+        }
+
+        // Formater une date
+        function formatDate(dateString) {
+            const options = { 
+                day: '2-digit', 
+                month: '2-digit', 
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            };
+            return new Date(dateString).toLocaleDateString('fr-FR', options);
+        }
+
+        // Simulation en temps réel
+        setInterval(() => {
+            ParkingData.simulateRealTimeChanges();
+            updateParkingGrid();
+        }, 5000);
+    </script>
+</body>
+</html>
