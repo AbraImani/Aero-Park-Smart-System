@@ -111,27 +111,114 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="duration">Durée estimée</label>
+                    <label for="duration">Durée de stationnement (en heures)</label>
                     <div class="input-icon">
                         <i class="fas fa-clock"></i>
-                        <select id="duration" style="width: 100%; padding: 0.875rem 1rem 0.875rem 2.75rem; border: 2px solid var(--border-color); border-radius: var(--radius-md); font-size: 1rem; background: var(--bg-color);">
-                            <option value="1">1 heure</option>
-                            <option value="2">2 heures</option>
-                            <option value="4">4 heures</option>
-                            <option value="8">8 heures</option>
-                            <option value="24" selected>24 heures (1 jour)</option>
-                            <option value="48">48 heures (2 jours)</option>
-                            <option value="168">1 semaine</option>
-                        </select>
+                        <input 
+                            type="number" 
+                            id="duration" 
+                            min="1" 
+                            max="168"
+                            value="1"
+                            placeholder="Nombre d'heures"
+                            oninput="updatePaymentAmount()"
+                            style="width: 100%; padding: 0.875rem 1rem 0.875rem 2.75rem; border: 2px solid var(--border-color); border-radius: var(--radius-md); font-size: 1rem; background: var(--bg-color);"
+                        >
+                    </div>
+                    <p style="font-size: 0.85rem; color: var(--text-light); margin-top: 0.5rem;">
+                        <i class="fas fa-info-circle"></i> Minimum 1 heure, maximum 168 heures (1 semaine)
+                    </p>
+                </div>
+
+                <!-- Section Paiement -->
+                <div class="payment-section">
+                    <h4><i class="fas fa-credit-card"></i> Paiement</h4>
+                    
+                    <div class="pricing-info">
+                        <div class="rate">1 000 FC <span>/ heure</span></div>
+                    </div>
+
+                    <div class="total-amount">
+                        <div class="label">Montant à payer</div>
+                        <div class="amount"><span id="payment-amount">1 000</span> <small>FC</small></div>
+                    </div>
+
+                    <div class="payment-methods">
+                        <label>Choisir le mode de paiement :</label>
+                        
+                        <div class="payment-option" onclick="selectPaymentMethod('orange')">
+                            <input type="radio" name="payment-method" id="pm-orange" value="orange">
+                            <span class="radio-custom"></span>
+                            <img src="../logo/orange_money_logo.png" alt="Orange Money" class="payment-logo">
+                            <span class="payment-name">Orange Money</span>
+                        </div>
+
+                        <div class="payment-option" onclick="selectPaymentMethod('airtel')">
+                            <input type="radio" name="payment-method" id="pm-airtel" value="airtel">
+                            <span class="radio-custom"></span>
+                            <img src="../logo/airtel-money.png" alt="Airtel Money" class="payment-logo">
+                            <span class="payment-name">Airtel Money</span>
+                        </div>
+
+                        <div class="payment-option" onclick="selectPaymentMethod('mpesa')">
+                            <input type="radio" name="payment-method" id="pm-mpesa" value="mpesa">
+                            <span class="radio-custom"></span>
+                            <img src="../logo/Mpesa.png" alt="M-Pesa" class="payment-logo">
+                            <span class="payment-name">M-Pesa</span>
+                        </div>
+                    </div>
+
+                    <div class="phone-input-group">
+                        <label for="phone-number"><i class="fas fa-phone"></i> Numéro de téléphone</label>
+                        <input 
+                            type="tel" 
+                            id="phone-number" 
+                            placeholder="Ex: 0991234567"
+                            maxlength="10"
+                        >
+                        <p class="hint">Entrez le numéro associé à votre compte Mobile Money</p>
+                    </div>
+
+                    <div class="payment-summary">
+                        <div class="summary-row">
+                            <span>Place</span>
+                            <span id="summary-spot">-</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Durée</span>
+                            <span id="summary-duration">1 heure</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Tarif</span>
+                            <span>1 000 FC/h</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Total</span>
+                            <span id="summary-total">1 000 FC</span>
+                        </div>
                     </div>
                 </div>
 
-                <div style="display: flex; gap: 1rem;">
+                <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
                     <button type="button" class="btn btn-outline" id="cancel-selection" style="flex: 1;">
                         <i class="fas fa-times"></i> Annuler
                     </button>
-                    <button type="button" class="btn btn-success" id="confirm-reservation" style="flex: 1;">
-                        <i class="fas fa-check"></i> Confirmer
+                    <button type="button" class="btn-pay" id="confirm-reservation" onclick="processPayment()">
+                        <i class="fas fa-lock"></i> Payer et Réserver
+                    </button>
+                </div>
+            </div>
+
+            <!-- Modal de paiement -->
+            <div class="payment-modal" id="payment-modal">
+                <div class="payment-modal-content">
+                    <div class="modal-icon processing" id="modal-icon">
+                        <i class="fas fa-spinner"></i>
+                    </div>
+                    <h3 id="modal-title">Traitement en cours...</h3>
+                    <p id="modal-message">Veuillez confirmer le paiement sur votre téléphone</p>
+                    <button class="btn btn-primary hidden" id="modal-btn" onclick="closePaymentModal()">
+                        <i class="fas fa-check"></i> OK
                     </button>
                 </div>
             </div>
@@ -180,15 +267,17 @@
 
         // Variables globales
         let selectedSpot = null;
+        let selectedPaymentMethod = null;
+        const RATE_PER_HOUR = 1000; // 1000 FC par heure
 
         function initReservationPage() {
             updateParkingGrid();
             updateQuickStats();
             loadUserReservations();
+            updatePaymentAmount();
 
             // Event listeners
             document.getElementById('cancel-selection').addEventListener('click', clearSelection);
-            document.getElementById('confirm-reservation').addEventListener('click', confirmReservation);
         }
 
         function initNavigation() {
@@ -265,7 +354,9 @@
 
             selectedSpot = spotId;
             document.getElementById('selected-spot-display').textContent = spotId;
+            document.getElementById('summary-spot').textContent = spotId;
             document.getElementById('reservation-form-container').classList.remove('hidden');
+            updatePaymentAmount();
             
             // Scroll vers le formulaire
             document.getElementById('reservation-form-container').scrollIntoView({ 
@@ -280,38 +371,12 @@
                 el.classList.remove('selected');
             });
             selectedSpot = null;
+            selectedPaymentMethod = null;
             document.getElementById('reservation-form-container').classList.add('hidden');
-        }
-
-        // Confirmer la réservation
-        function confirmReservation() {
-            if (!selectedSpot) {
-                showNotification('Veuillez sélectionner une place.', 'error');
-                return;
-            }
-
-            const user = Auth.getCurrentUser();
-            if (!user) {
-                showNotification('Veuillez vous connecter.', 'error');
-                return;
-            }
-
-            // Récupérer les infos supplémentaires
-            const vehiclePlate = document.getElementById('vehicle-plate').value;
-            const duration = document.getElementById('duration').value;
-
-            // Effectuer la réservation
-            const success = ParkingData.reserveSpot(selectedSpot, user.userId);
-
-            if (success) {
-                showNotification(`Place ${selectedSpot} réservée avec succès !`, 'success');
-                clearSelection();
-                updateParkingGrid();
-                loadUserReservations();
-            } else {
-                showNotification('Cette place n\'est plus disponible.', 'error');
-                updateParkingGrid();
-            }
+            document.querySelectorAll('.payment-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            document.getElementById('phone-number').value = '';
         }
 
         // Charger les réservations de l'utilisateur
@@ -387,6 +452,186 @@
             ParkingData.simulateRealTimeChanges();
             updateParkingGrid();
         }, 5000);
+
+        // ========================================
+        // Fonctions de Paiement
+        // ========================================
+
+        // Mettre à jour le montant à payer
+        function updatePaymentAmount() {
+            let duration = parseInt(document.getElementById('duration').value) || 0;
+            
+            // Validation des limites
+            if (duration < 1) duration = 1;
+            if (duration > 168) duration = 168;
+            
+            const amount = duration * RATE_PER_HOUR;
+            const formattedAmount = amount.toLocaleString('fr-FR');
+            
+            document.getElementById('payment-amount').textContent = formattedAmount;
+            document.getElementById('summary-total').textContent = formattedAmount + ' FC';
+            
+            // Mettre à jour la durée dans le résumé
+            let durationText = duration + ' heure' + (duration > 1 ? 's' : '');
+            if (duration >= 24) {
+                const days = Math.floor(duration / 24);
+                const remainingHours = duration % 24;
+                if (remainingHours === 0) {
+                    durationText = days + ' jour' + (days > 1 ? 's' : '') + ' (' + duration + 'h)';
+                } else {
+                    durationText = days + 'j ' + remainingHours + 'h (' + duration + 'h total)';
+                }
+            }
+            
+            document.getElementById('summary-duration').textContent = durationText;
+        }
+
+        // Sélectionner un mode de paiement
+        function selectPaymentMethod(method) {
+            selectedPaymentMethod = method;
+            
+            // Retirer la sélection précédente
+            document.querySelectorAll('.payment-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            
+            // Ajouter la sélection
+            const selectedOption = document.querySelector(`#pm-${method}`).closest('.payment-option');
+            selectedOption.classList.add('selected');
+            document.querySelector(`#pm-${method}`).checked = true;
+        }
+
+        // Traiter le paiement
+        function processPayment() {
+            const phoneNumber = document.getElementById('phone-number').value.trim();
+            const duration = parseInt(document.getElementById('duration').value) || 0;
+            
+            // Validations
+            if (!selectedSpot) {
+                showNotification('Veuillez sélectionner une place.', 'error');
+                return;
+            }
+
+            if (duration < 1) {
+                showNotification('Veuillez entrer une durée valide (minimum 1 heure).', 'error');
+                return;
+            }
+
+            if (duration > 168) {
+                showNotification('La durée maximale est de 168 heures (1 semaine).', 'error');
+                return;
+            }
+            
+            if (!selectedPaymentMethod) {
+                showNotification('Veuillez choisir un mode de paiement.', 'error');
+                return;
+            }
+            
+            if (!phoneNumber || phoneNumber.length < 10) {
+                showNotification('Veuillez entrer un numéro de téléphone valide.', 'error');
+                return;
+            }
+
+            // Afficher le modal de traitement
+            showPaymentModal('processing');
+
+            // Simuler le traitement du paiement (3 secondes)
+            setTimeout(() => {
+                // Simuler une réponse réussie (90% de chance de succès)
+                const success = Math.random() < 0.9;
+                
+                if (success) {
+                    // Paiement réussi
+                    showPaymentModal('success');
+                    
+                    // Effectuer la réservation
+                    const user = Auth.getCurrentUser();
+                    const duration = parseInt(document.getElementById('duration').value);
+                    const amount = duration * RATE_PER_HOUR;
+                    
+                    ParkingData.reserveSpot(selectedSpot, user.userId);
+                    
+                    // Sauvegarder les détails du paiement
+                    savePaymentRecord({
+                        spotId: selectedSpot,
+                        userId: user.userId,
+                        amount: amount,
+                        duration: duration,
+                        paymentMethod: selectedPaymentMethod,
+                        phoneNumber: phoneNumber,
+                        status: 'completed',
+                        paidAt: new Date().toISOString()
+                    });
+                    
+                } else {
+                    // Paiement échoué
+                    showPaymentModal('error');
+                }
+            }, 3000);
+        }
+
+        // Afficher le modal de paiement
+        function showPaymentModal(status) {
+            const modal = document.getElementById('payment-modal');
+            const icon = document.getElementById('modal-icon');
+            const title = document.getElementById('modal-title');
+            const message = document.getElementById('modal-message');
+            const btn = document.getElementById('modal-btn');
+            
+            modal.classList.add('active');
+            
+            if (status === 'processing') {
+                icon.className = 'modal-icon processing';
+                icon.innerHTML = '<i class="fas fa-spinner"></i>';
+                title.textContent = 'Traitement en cours...';
+                message.textContent = 'Veuillez confirmer le paiement sur votre téléphone';
+                btn.classList.add('hidden');
+            } else if (status === 'success') {
+                icon.className = 'modal-icon success';
+                icon.innerHTML = '<i class="fas fa-check-circle"></i>';
+                title.textContent = 'Paiement réussi !';
+                message.textContent = 'Votre place a été réservée avec succès.';
+                btn.classList.remove('hidden');
+                btn.className = 'btn btn-success';
+                btn.innerHTML = '<i class="fas fa-check"></i> Parfait !';
+            } else if (status === 'error') {
+                icon.className = 'modal-icon error';
+                icon.innerHTML = '<i class="fas fa-times-circle"></i>';
+                title.textContent = 'Paiement échoué';
+                message.textContent = 'Une erreur est survenue. Veuillez réessayer.';
+                btn.classList.remove('hidden');
+                btn.className = 'btn btn-danger';
+                btn.innerHTML = '<i class="fas fa-redo"></i> Réessayer';
+            }
+        }
+
+        // Fermer le modal de paiement
+        function closePaymentModal() {
+            const modal = document.getElementById('payment-modal');
+            const icon = document.getElementById('modal-icon');
+            
+            modal.classList.remove('active');
+            
+            // Si paiement réussi, réinitialiser la page
+            if (icon.classList.contains('success')) {
+                clearSelection();
+                updateParkingGrid();
+                loadUserReservations();
+                selectedPaymentMethod = null;
+                document.querySelectorAll('.payment-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                document.getElementById('phone-number').value = '';
+            }
+        }
+
+        // Sauvegarder l'enregistrement du paiement
+        function savePaymentRecord(payment) {
+            let payments = JSON.parse(localStorage.getItem('aeropark_payments') || '[]');
+            payment.id = Date.now().toString();
+            payments.push(payment);
+            localStorage.setItem('aeropark_payments', JSON.stringify(payments));
+        }
     </script>
 </body>
 </html>
