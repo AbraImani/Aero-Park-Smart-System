@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Places - Admin AeroPark GOMA</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/admin.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="admin-page">
+    <!-- Sidebar -->
+    <aside class="admin-sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <i class="fas fa-plane"></i>
+                <span>AeroPark GOMA</span>
+            </div>
+            <button class="sidebar-toggle" id="sidebar-toggle">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+
+        <nav class="sidebar-nav">
+            <ul>
+                <li>
+                    <a href="dashboard.html">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Tableau de bord</span>
+                    </a>
+                </li>
+                <li class="active">
+                    <a href="places.html">
+                        <i class="fas fa-parking"></i>
+                        <span>Gestion des places</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="reservations.html">
+                        <i class="fas fa-calendar-check"></i>
+                        <span>Réservations</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="users.html">
+                        <i class="fas fa-users"></i>
+                        <span>Utilisateurs</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="payments.html">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <span>Paiements</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="settings.html">
+                        <i class="fas fa-cog"></i>
+                        <span>Paramètres</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="admin-info">
+                <div class="admin-avatar">
+                    <i class="fas fa-user-shield"></i>
+                </div>
+                <div class="admin-details">
+                    <span class="admin-name" id="admin-name">Admin</span>
+                    <span class="admin-role">Administrateur</span>
+                </div>
+            </div>
+            <button class="btn-logout" id="admin-logout">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Déconnexion</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="admin-main">
+        <header class="admin-header">
+            <div class="header-left">
+                <button class="mobile-menu-toggle" id="mobile-menu-toggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h1>Gestion des Places</h1>
+            </div>
+        </header>
+
+        <div class="admin-content">
+            <!-- Stats -->
+            <section class="dashboard-stats">
+                <div class="stat-card-admin">
+                    <div class="stat-card-icon blue">
+                        <i class="fas fa-parking"></i>
+                    </div>
+                    <div class="stat-card-info">
+                        <h3 id="stat-total">0</h3>
+                        <p>Total</p>
+                    </div>
+                </div>
+                <div class="stat-card-admin">
+                    <div class="stat-card-icon green">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-card-info">
+                        <h3 id="stat-available">0</h3>
+                        <p>Disponibles</p>
+                    </div>
+                </div>
+                <div class="stat-card-admin">
+                    <div class="stat-card-icon orange">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-card-info">
+                        <h3 id="stat-reserved">0</h3>
+                        <p>Réservées</p>
+                    </div>
+                </div>
+                <div class="stat-card-admin">
+                    <div class="stat-card-icon red">
+                        <i class="fas fa-car"></i>
+                    </div>
+                    <div class="stat-card-info">
+                        <h3 id="stat-occupied">0</h3>
+                        <p>Occupées</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Filters -->
+            <div class="filters-bar">
+                <div class="filter-group">
+                    <label>Filtrer par statut:</label>
+                    <select id="filter-status" onchange="filterSpots()">
+                        <option value="all">Tous</option>
+                        <option value="available">Disponibles</option>
+                        <option value="reserved">Réservées</option>
+                        <option value="occupied">Occupées</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Rangée:</label>
+                    <select id="filter-row" onchange="filterSpots()">
+                        <option value="all">Toutes</option>
+                        <option value="A">Rangée A</option>
+                        <option value="B">Rangée B</option>
+                        <option value="C">Rangée C</option>
+                        <option value="D">Rangée D</option>
+                        <option value="E">Rangée E</option>
+                    </select>
+                </div>
+                <div style="flex: 1;"></div>
+                <button class="btn btn-primary" onclick="resetAllSpots()">
+                    <i class="fas fa-sync"></i> Réinitialiser tout
+                </button>
+            </div>
+
+            <!-- Parking Grid -->
+            <div class="dashboard-card full-width">
+                <div class="card-header">
+                    <h3><i class="fas fa-map"></i> Plan du Parking</h3>
+                    <span id="spots-count">0 places</span>
+                </div>
+                <div class="card-body">
+                    <div class="parking-overview" id="parking-grid" style="gap: 0.75rem;">
+                        <!-- Généré par JavaScript -->
+                    </div>
+                    <div class="map-legend" style="margin-top: 1.5rem;">
+                        <div class="legend-item">
+                            <span class="legend-color available"></span>
+                            <span>Disponible (cliquez pour changer)</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color occupied"></span>
+                            <span>Occupée</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color reserved"></span>
+                            <span>Réservée</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Spots Table -->
+            <div class="dashboard-card full-width">
+                <div class="card-header">
+                    <h3><i class="fas fa-list"></i> Liste des Places</h3>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Rangée</th>
+                                    <th>Numéro</th>
+                                    <th>Statut</th>
+                                    <th>Réservé par</th>
+                                    <th>Date réservation</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="spots-table">
+                                <tr>
+                                    <td colspan="7" class="text-center">Chargement...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal Changer Statut -->
+    <div class="admin-modal" id="status-modal">
+        <div class="admin-modal-content">
+            <div class="modal-header">
+                <h3>Modifier le statut</h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Place sélectionnée: <strong id="modal-spot-id">-</strong></p>
+                <div class="form-group" style="margin-top: 1rem;">
+                    <label>Nouveau statut:</label>
+                    <select id="new-status" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); margin-top: 0.5rem;">
+                        <option value="available">Disponible</option>
+                        <option value="occupied">Occupée</option>
+                        <option value="reserved">Réservée</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal()">Annuler</button>
+                <button class="btn btn-primary" onclick="saveSpotStatus()">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/data.js"></script>
+    <script src="../js/admin.js"></script>
+    <script>
+        // Vérifier l'authentification
+        if (!AdminAuth.isLoggedIn()) {
+            window.location.href = 'login.html';
+        }
+
+        let currentSpotId = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadStats();
+            loadParkingGrid();
+            loadSpotsTable();
+            initSidebar();
+
+            const admin = AdminAuth.getCurrentAdmin();
+            if (admin) {
+                document.getElementById('admin-name').textContent = admin.username;
+            }
+        });
+
+        function loadStats() {
+            const stats = ParkingData.getStats();
+            document.getElementById('stat-total').textContent = stats.total;
+            document.getElementById('stat-available').textContent = stats.available;
+            document.getElementById('stat-reserved').textContent = stats.reserved;
+            document.getElementById('stat-occupied').textContent = stats.occupied;
+        }
+
+        function loadParkingGrid() {
+            const container = document.getElementById('parking-grid');
+            const spots = getFilteredSpots();
+
+            document.getElementById('spots-count').textContent = spots.length + ' places';
+
+            container.innerHTML = spots.map(spot => `
+                <div class="parking-spot-admin ${spot.status}" 
+                     onclick="openStatusModal('${spot.id}')"
+                     title="Place ${spot.id} - ${spot.status}"
+                     style="width: 55px; height: 55px; font-size: 0.8rem;">
+                    ${spot.id}
+                </div>
+            `).join('');
+        }
+
+        function loadSpotsTable() {
+            const spots = getFilteredSpots();
+            const users = UserManager.getAll();
+            const tbody = document.getElementById('spots-table');
+
+            if (spots.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Aucune place trouvée</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = spots.map(spot => {
+                const user = spot.reservedBy ? users.find(u => u.id === spot.reservedBy) : null;
+                const statusClass = spot.status === 'available' ? 'success' : 
+                                   spot.status === 'reserved' ? 'warning' : 'danger';
+                const statusText = spot.status === 'available' ? 'Disponible' : 
+                                  spot.status === 'reserved' ? 'Réservée' : 'Occupée';
+                
+                return `
+                    <tr>
+                        <td><strong>${spot.id}</strong></td>
+                        <td>${spot.row}</td>
+                        <td>${spot.number}</td>
+                        <td><span class="badge ${statusClass}">${statusText}</span></td>
+                        <td>${user ? user.name : '-'}</td>
+                        <td>${spot.reservedAt ? AdminUtils.formatDate(spot.reservedAt) : '-'}</td>
+                        <td>
+                            <button class="btn-icon edit" onclick="openStatusModal('${spot.id}')" title="Modifier">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            ${spot.status !== 'available' ? `
+                                <button class="btn-icon delete" onclick="freeSpot('${spot.id}')" title="Libérer">
+                                    <i class="fas fa-unlock"></i>
+                                </button>
+                            ` : ''}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function getFilteredSpots() {
+            let spots = ParkingData.getAllSpots();
+            const statusFilter = document.getElementById('filter-status').value;
+            const rowFilter = document.getElementById('filter-row').value;
+
+            if (statusFilter !== 'all') {
+                spots = spots.filter(s => s.status === statusFilter);
+            }
+            if (rowFilter !== 'all') {
+                spots = spots.filter(s => s.row === rowFilter);
+            }
+
+            return spots;
+        }
+
+        function filterSpots() {
+            loadParkingGrid();
+            loadSpotsTable();
+        }
+
+        function openStatusModal(spotId) {
+            currentSpotId = spotId;
+            const spot = ParkingData.getSpotById(spotId);
+            
+            document.getElementById('modal-spot-id').textContent = spotId;
+            document.getElementById('new-status').value = spot.status;
+            document.getElementById('status-modal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('status-modal').classList.remove('active');
+            currentSpotId = null;
+        }
+
+        function saveSpotStatus() {
+            if (!currentSpotId) return;
+
+            const newStatus = document.getElementById('new-status').value;
+            ParkingData.updateSpot(currentSpotId, { 
+                status: newStatus,
+                reservedBy: newStatus === 'available' ? null : undefined,
+                reservedAt: newStatus === 'available' ? null : undefined
+            });
+
+            closeModal();
+            loadStats();
+            loadParkingGrid();
+            loadSpotsTable();
+            AdminUtils.showNotification(`Place ${currentSpotId} mise à jour`);
+        }
+
+        function freeSpot(spotId) {
+            if (confirm(`Voulez-vous libérer la place ${spotId} ?`)) {
+                ParkingData.updateSpot(spotId, {
+                    status: 'available',
+                    reservedBy: null,
+                    reservedAt: null
+                });
+                loadStats();
+                loadParkingGrid();
+                loadSpotsTable();
+                AdminUtils.showNotification(`Place ${spotId} libérée`);
+            }
+        }
+
+        function resetAllSpots() {
+            if (confirm('Voulez-vous réinitialiser toutes les places ? Cette action est irréversible.')) {
+                ParkingData.reset();
+                loadStats();
+                loadParkingGrid();
+                loadSpotsTable();
+                AdminUtils.showNotification('Toutes les places ont été réinitialisées');
+            }
+        }
+
+        function initSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const sidebarToggle = document.getElementById('sidebar-toggle');
+            const mobileToggle = document.getElementById('mobile-menu-toggle');
+
+            sidebarToggle.addEventListener('click', () => {
+                sidebar.classList.toggle('collapsed');
+            });
+
+            mobileToggle.addEventListener('click', () => {
+                sidebar.classList.toggle('mobile-open');
+            });
+
+            document.getElementById('admin-logout').addEventListener('click', () => {
+                AdminAuth.logout();
+                window.location.href = 'login.html';
+            });
+        }
+    </script>
+</body>
+</html>

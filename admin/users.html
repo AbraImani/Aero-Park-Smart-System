@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Utilisateurs - Admin AeroPark GOMA</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/admin.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="admin-page">
+    <!-- Sidebar -->
+    <aside class="admin-sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <i class="fas fa-plane"></i>
+                <span>AeroPark GOMA</span>
+            </div>
+            <button class="sidebar-toggle" id="sidebar-toggle">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+
+        <nav class="sidebar-nav">
+            <ul>
+                <li>
+                    <a href="dashboard.html">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Tableau de bord</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="places.html">
+                        <i class="fas fa-parking"></i>
+                        <span>Gestion des places</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="reservations.html">
+                        <i class="fas fa-calendar-check"></i>
+                        <span>Réservations</span>
+                    </a>
+                </li>
+                <li class="active">
+                    <a href="users.html">
+                        <i class="fas fa-users"></i>
+                        <span>Utilisateurs</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="payments.html">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <span>Paiements</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="settings.html">
+                        <i class="fas fa-cog"></i>
+                        <span>Paramètres</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="admin-info">
+                <div class="admin-avatar">
+                    <i class="fas fa-user-shield"></i>
+                </div>
+                <div class="admin-details">
+                    <span class="admin-name" id="admin-name">Admin</span>
+                    <span class="admin-role">Administrateur</span>
+                </div>
+            </div>
+            <button class="btn-logout" id="admin-logout">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Déconnexion</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="admin-main">
+        <header class="admin-header">
+            <div class="header-left">
+                <button class="mobile-menu-toggle" id="mobile-menu-toggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h1>Gestion des Utilisateurs</h1>
+            </div>
+        </header>
+
+        <div class="admin-content">
+            <!-- Stats -->
+            <section class="dashboard-stats">
+                <div class="stat-card-admin">
+                    <div class="stat-card-icon purple">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-card-info">
+                        <h3 id="stat-total">0</h3>
+                        <p>Total utilisateurs</p>
+                    </div>
+                </div>
+                <div class="stat-card-admin">
+                    <div class="stat-card-icon green">
+                        <i class="fas fa-user-check"></i>
+                    </div>
+                    <div class="stat-card-info">
+                        <h3 id="stat-active">0</h3>
+                        <p>Actifs</p>
+                    </div>
+                </div>
+                <div class="stat-card-admin">
+                    <div class="stat-card-icon red">
+                        <i class="fas fa-user-slash"></i>
+                    </div>
+                    <div class="stat-card-info">
+                        <h3 id="stat-blocked">0</h3>
+                        <p>Bloqués</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Filters -->
+            <div class="filters-bar">
+                <div class="filter-group">
+                    <label>Rechercher:</label>
+                    <input type="text" id="search-user" placeholder="Nom ou email..." oninput="filterUsers()">
+                </div>
+                <div class="filter-group">
+                    <label>Statut:</label>
+                    <select id="filter-status" onchange="filterUsers()">
+                        <option value="all">Tous</option>
+                        <option value="active">Actifs</option>
+                        <option value="blocked">Bloqués</option>
+                    </select>
+                </div>
+                <div style="flex: 1;"></div>
+                <button class="btn btn-outline" onclick="exportUsers()">
+                    <i class="fas fa-download"></i> Exporter
+                </button>
+            </div>
+
+            <!-- Users Table -->
+            <div class="dashboard-card full-width">
+                <div class="card-header">
+                    <h3><i class="fas fa-users"></i> Liste des Utilisateurs</h3>
+                    <span id="users-count">0 utilisateurs</span>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nom</th>
+                                    <th>Email</th>
+                                    <th>Date inscription</th>
+                                    <th>Réservations</th>
+                                    <th>Statut</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="users-table">
+                                <tr>
+                                    <td colspan="7" class="text-center">Chargement...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal Détails Utilisateur -->
+    <div class="admin-modal" id="user-modal">
+        <div class="admin-modal-content">
+            <div class="modal-header">
+                <h3>Détails de l'utilisateur</h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="user-details">
+                <!-- Contenu généré par JavaScript -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal()">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/data.js"></script>
+    <script src="../js/admin.js"></script>
+    <script>
+        // Vérifier l'authentification
+        if (!AdminAuth.isLoggedIn()) {
+            window.location.href = 'login.html';
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadStats();
+            loadUsersTable();
+            initSidebar();
+
+            const admin = AdminAuth.getCurrentAdmin();
+            if (admin) {
+                document.getElementById('admin-name').textContent = admin.username;
+            }
+        });
+
+        function loadStats() {
+            const stats = UserManager.getStats();
+            document.getElementById('stat-total').textContent = stats.total;
+            document.getElementById('stat-active').textContent = stats.active;
+            document.getElementById('stat-blocked').textContent = stats.blocked;
+        }
+
+        function loadUsersTable() {
+            const users = getFilteredUsers();
+            const reservations = ParkingData.getReservations();
+            const tbody = document.getElementById('users-table');
+
+            document.getElementById('users-count').textContent = users.length + ' utilisateurs';
+
+            if (users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Aucun utilisateur trouvé</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = users.map(user => {
+                const userReservations = reservations.filter(r => r.userId === user.id);
+                const statusClass = user.blocked ? 'danger' : 'success';
+                const statusText = user.blocked ? 'Bloqué' : 'Actif';
+                
+                return `
+                    <tr>
+                        <td>#${user.id.slice(-6)}</td>
+                        <td><strong>${user.name}</strong></td>
+                        <td>${user.email}</td>
+                        <td>${AdminUtils.formatDate(user.createdAt)}</td>
+                        <td>${userReservations.length}</td>
+                        <td><span class="badge ${statusClass}">${statusText}</span></td>
+                        <td>
+                            <button class="btn-icon view" onclick="viewUser('${user.id}')" title="Voir">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            ${user.blocked ? `
+                                <button class="btn-icon edit" onclick="unblockUser('${user.id}')" title="Débloquer">
+                                    <i class="fas fa-unlock"></i>
+                                </button>
+                            ` : `
+                                <button class="btn-icon delete" onclick="blockUser('${user.id}')" title="Bloquer">
+                                    <i class="fas fa-ban"></i>
+                                </button>
+                            `}
+                            <button class="btn-icon delete" onclick="deleteUser('${user.id}')" title="Supprimer">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function getFilteredUsers() {
+            let users = UserManager.getAll();
+            const search = document.getElementById('search-user').value.toLowerCase();
+            const status = document.getElementById('filter-status').value;
+
+            if (search) {
+                users = users.filter(u => 
+                    u.name.toLowerCase().includes(search) || 
+                    u.email.toLowerCase().includes(search)
+                );
+            }
+
+            if (status === 'active') {
+                users = users.filter(u => !u.blocked);
+            } else if (status === 'blocked') {
+                users = users.filter(u => u.blocked);
+            }
+
+            return users;
+        }
+
+        function filterUsers() {
+            loadUsersTable();
+        }
+
+        function viewUser(userId) {
+            const user = UserManager.getById(userId);
+            const reservations = ParkingData.getReservations().filter(r => r.userId === userId);
+            const payments = JSON.parse(localStorage.getItem('aeropark_payments') || '[]').filter(p => p.userId === userId);
+            
+            const totalSpent = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
+
+            document.getElementById('user-details').innerHTML = `
+                <div style="margin-bottom: 1.5rem;">
+                    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                        <div style="width: 60px; height: 60px; background: var(--primary-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem;">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div>
+                            <h4 style="margin: 0;">${user.name}</h4>
+                            <p style="margin: 0; color: var(--text-secondary);">${user.email}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
+                    <div style="background: var(--bg-color); padding: 1rem; border-radius: var(--radius-md);">
+                        <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 0.25rem;">Inscrit le</p>
+                        <strong>${AdminUtils.formatDate(user.createdAt)}</strong>
+                    </div>
+                    <div style="background: var(--bg-color); padding: 1rem; border-radius: var(--radius-md);">
+                        <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 0.25rem;">Statut</p>
+                        <span class="badge ${user.blocked ? 'danger' : 'success'}">${user.blocked ? 'Bloqué' : 'Actif'}</span>
+                    </div>
+                    <div style="background: var(--bg-color); padding: 1rem; border-radius: var(--radius-md);">
+                        <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 0.25rem;">Réservations</p>
+                        <strong>${reservations.length}</strong>
+                    </div>
+                    <div style="background: var(--bg-color); padding: 1rem; border-radius: var(--radius-md);">
+                        <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 0.25rem;">Total dépensé</p>
+                        <strong>${totalSpent.toLocaleString('fr-FR')} FC</strong>
+                    </div>
+                </div>
+
+                ${reservations.length > 0 ? `
+                    <h5 style="margin-bottom: 0.75rem;">Dernières réservations</h5>
+                    <table class="admin-table" style="font-size: 0.9rem;">
+                        <thead>
+                            <tr>
+                                <th>Place</th>
+                                <th>Date</th>
+                                <th>Statut</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${reservations.slice(-5).reverse().map(r => `
+                                <tr>
+                                    <td>${r.spotId}</td>
+                                    <td>${AdminUtils.formatDate(r.createdAt)}</td>
+                                    <td><span class="badge ${r.status === 'active' ? 'success' : 'secondary'}">${r.status}</span></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                ` : '<p class="text-muted">Aucune réservation</p>'}
+            `;
+
+            document.getElementById('user-modal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('user-modal').classList.remove('active');
+        }
+
+        function blockUser(userId) {
+            const user = UserManager.getById(userId);
+            if (confirm(`Voulez-vous bloquer l'utilisateur "${user.name}" ?`)) {
+                UserManager.block(userId);
+                loadStats();
+                loadUsersTable();
+                AdminUtils.showNotification('Utilisateur bloqué');
+            }
+        }
+
+        function unblockUser(userId) {
+            UserManager.unblock(userId);
+            loadStats();
+            loadUsersTable();
+            AdminUtils.showNotification('Utilisateur débloqué');
+        }
+
+        function deleteUser(userId) {
+            const user = UserManager.getById(userId);
+            if (confirm(`Voulez-vous supprimer définitivement l'utilisateur "${user.name}" ?`)) {
+                UserManager.delete(userId);
+                loadStats();
+                loadUsersTable();
+                AdminUtils.showNotification('Utilisateur supprimé');
+            }
+        }
+
+        function exportUsers() {
+            const users = UserManager.getAll().map(u => ({
+                id: u.id,
+                name: u.name,
+                email: u.email,
+                createdAt: u.createdAt,
+                status: u.blocked ? 'Bloqué' : 'Actif'
+            }));
+            AdminUtils.exportToCSV(users, 'utilisateurs_aeropark.csv');
+            AdminUtils.showNotification('Export terminé');
+        }
+
+        function initSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const sidebarToggle = document.getElementById('sidebar-toggle');
+            const mobileToggle = document.getElementById('mobile-menu-toggle');
+
+            sidebarToggle.addEventListener('click', () => sidebar.classList.toggle('collapsed'));
+            mobileToggle.addEventListener('click', () => sidebar.classList.toggle('mobile-open'));
+            document.getElementById('admin-logout').addEventListener('click', () => {
+                AdminAuth.logout();
+                window.location.href = 'login.html';
+            });
+        }
+    </script>
+</body>
+</html>
