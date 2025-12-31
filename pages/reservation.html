@@ -390,7 +390,8 @@
             }
 
             const user = Auth.getCurrentUser();
-            const reservations = ParkingData.getUserReservations(user.userId);
+            // Utiliser getActiveUserReservations pour avoir uniquement les réservations actives et valides
+            const reservations = ParkingData.getActiveUserReservations(user.userId);
 
             if (reservations.length === 0) {
                 container.classList.remove('hidden');
@@ -404,17 +405,75 @@
             }
 
             container.classList.remove('hidden');
-            list.innerHTML = reservations.map(res => `
-                <div class="reservation-item">
-                    <div class="info">
-                        <span class="spot-name"><i class="fas fa-parking"></i> Place ${res.spotId}</span>
-                        <span class="date"><i class="fas fa-calendar"></i> Réservée le ${formatDate(res.createdAt)}</span>
+            list.innerHTML = reservations.map(res => {
+                const remaining = ParkingData.getRemainingTime(res.spotId);
+                const spot = ParkingData.getSpotById(res.spotId);
+                // Vérifier que la place existe toujours
+                if (!spot) return '';
+                
+                const statusLabel = spot.status === 'occupied' ? 
+                    '<span class="status-badge occupied"><i class="fas fa-car"></i> Occupée</span>' : 
+                    '<span class="status-badge reserved"><i class="fas fa-clock"></i> Réservée</span>';
+                
+                return `
+                    <div class="reservation-item" data-spot-id="${res.spotId}">
+                        <div class="info">
+                            <span class="spot-name"><i class="fas fa-parking"></i> Place ${res.spotId}</span>
+                            ${statusLabel}
+                            <span class="date"><i class="fas fa-calendar"></i> Réservée le ${formatDate(res.createdAt)}</span>
+                            <div class="countdown-timer" data-spot="${res.spotId}">
+                                <i class="fas fa-hourglass-half"></i> 
+                                <span class="time-remaining">${formatRemainingTime(remaining)}</span>
+                            </div>
+                        </div>
+                        <button class="btn btn-danger" onclick="cancelReservation('${res.spotId}')">
+                            <i class="fas fa-times"></i> Annuler
+                        </button>
                     </div>
-                    <button class="btn btn-danger" onclick="cancelReservation('${res.spotId}')">
-                        <i class="fas fa-times"></i> Annuler
-                    </button>
-                </div>
-            `).join('');
+                `;
+            }).join('');
+        }
+
+        // Formater le temps restant
+        function formatRemainingTime(remaining) {
+            if (!remaining || remaining.expired) {
+                return '<span class="expired">Expirée</span>';
+            }
+            
+            const { hours, minutes, seconds } = remaining;
+            
+            if (hours > 24) {
+                const days = Math.floor(hours / 24);
+                const remainingHours = hours % 24;
+                return `${days}j ${remainingHours}h ${minutes}m`;
+            }
+            
+            return `${hours}h ${minutes}m ${seconds}s`;
+        }
+
+        // Mettre à jour les compteurs en temps réel
+        function updateCountdowns() {
+            const countdownElements = document.querySelectorAll('.countdown-timer');
+            
+            countdownElements.forEach(el => {
+                const spotId = el.dataset.spot;
+                const remaining = ParkingData.getRemainingTime(spotId);
+                const timeSpan = el.querySelector('.time-remaining');
+                
+                if (timeSpan) {
+                    timeSpan.innerHTML = formatRemainingTime(remaining);
+                    
+                    // Ajouter une classe d'urgence si moins de 30 minutes
+                    if (remaining && !remaining.expired && remaining.hours === 0 && remaining.minutes < 30) {
+                        el.classList.add('urgent');
+                    } else {
+                        el.classList.remove('urgent');
+                    }
+                }
+            });
+            
+            // Vérifier les réservations expirées
+            ParkingData.checkExpiredReservations();
         }
 
         // Annuler une réservation
@@ -447,11 +506,11 @@
             return new Date(dateString).toLocaleDateString('fr-FR', options);
         }
 
-        // Simulation en temps réel
+        // Mise à jour en temps réel (grille et compteurs)
         setInterval(() => {
-            ParkingData.simulateRealTimeChanges();
             updateParkingGrid();
-        }, 5000);
+            updateCountdowns();
+        }, 1000);
 
         // ========================================
         // Fonctions de Paiement
@@ -544,21 +603,29 @@
                     // Paiement réussi
                     showPaymentModal('success');
                     
-                    // Effectuer la réservation
+                    // Effectuer la réservation avec la durée
                     const user = Auth.getCurrentUser();
-                    const duration = parseInt(document.getElementById('duration').value);
+                    const vehiclePlate = document.getElementById('vehicle-plate').value.trim();
                     const amount = duration * RATE_PER_HOUR;
                     
-                    ParkingData.reserveSpot(selectedSpot, user.userId);
+                    // Utiliser la nouvelle fonction avec durée
+                    ParkingData.reserveSpotWithDuration(
+                        selectedSpot, 
+                        user.userId, 
+                        duration,
+                        vehiclePlate
+                    );
                     
                     // Sauvegarder les détails du paiement
                     savePaymentRecord({
                         spotId: selectedSpot,
                         userId: user.userId,
+                        userName: user.name,
                         amount: amount,
                         duration: duration,
                         paymentMethod: selectedPaymentMethod,
                         phoneNumber: phoneNumber,
+                        vehiclePlate: vehiclePlate,
                         status: 'completed',
                         paidAt: new Date().toISOString()
                     });

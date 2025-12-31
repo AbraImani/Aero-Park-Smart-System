@@ -220,6 +220,9 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
+            // Nettoyer les réservations obsolètes au chargement
+            ParkingData.cleanupObsoleteReservations();
+            
             loadStats();
             loadReservationsTable();
             initSidebar();

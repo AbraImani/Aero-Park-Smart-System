@@ -20,8 +20,14 @@ function initNavigation() {
 
     if (hamburger && navLinks) {
         hamburger.addEventListener('click', () => {
-            hamburger.classList.toggle('active');
+            const isActive = hamburger.classList.toggle('active');
             navLinks.classList.toggle('active');
+            
+            // Accessibilité - mise à jour aria-expanded
+            hamburger.setAttribute('aria-expanded', isActive);
+            
+            // Empêcher le scroll du body quand le menu est ouvert
+            document.body.style.overflow = isActive ? 'hidden' : '';
         });
 
         // Fermer le menu mobile au clic sur un lien
@@ -29,7 +35,32 @@ function initNavigation() {
             link.addEventListener('click', () => {
                 hamburger.classList.remove('active');
                 navLinks.classList.remove('active');
+                hamburger.setAttribute('aria-expanded', 'false');
+                document.body.style.overflow = '';
             });
+        });
+
+        // Fermer le menu avec la touche Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && navLinks.classList.contains('active')) {
+                hamburger.classList.remove('active');
+                navLinks.classList.remove('active');
+                hamburger.setAttribute('aria-expanded', 'false');
+                document.body.style.overflow = '';
+                hamburger.focus();
+            }
+        });
+
+        // Fermer le menu au clic en dehors
+        document.addEventListener('click', (e) => {
+            if (navLinks.classList.contains('active') && 
+                !navLinks.contains(e.target) && 
+                !hamburger.contains(e.target)) {
+                hamburger.classList.remove('active');
+                navLinks.classList.remove('active');
+                hamburger.setAttribute('aria-expanded', 'false');
+                document.body.style.overflow = '';
+            }
         });
     }
 }
@@ -161,14 +192,17 @@ function getStatusLabel(status) {
 }
 
 /* ========================================
-   Simulation en temps réel
+   Mise à jour en temps réel
    ======================================== */
-let simulationInterval = null;
+let updateInterval = null;
 
 function startRealTimeSimulation() {
-    // Mettre à jour toutes les 5 secondes
-    simulationInterval = setInterval(() => {
-        ParkingData.simulateRealTimeChanges();
+    // Mettre à jour toutes les 2 secondes
+    updateInterval = setInterval(() => {
+        // Vérifier les réservations expirées
+        ParkingData.checkExpiredReservations();
+        
+        // Mettre à jour l'affichage
         updateStats();
         updateProgressRing();
         generateParkingPreview();
@@ -177,13 +211,16 @@ function startRealTimeSimulation() {
         if (typeof updateParkingGrid === 'function') {
             updateParkingGrid();
         }
-    }, 5000);
+        if (typeof updateCountdowns === 'function') {
+            updateCountdowns();
+        }
+    }, 2000);
 }
 
 function stopRealTimeSimulation() {
-    if (simulationInterval) {
-        clearInterval(simulationInterval);
-        simulationInterval = null;
+    if (updateInterval) {
+        clearInterval(updateInterval);
+        updateInterval = null;
     }
 }
 

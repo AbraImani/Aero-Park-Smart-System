@@ -142,18 +142,10 @@
                         <option value="occupied">Occupées</option>
                     </select>
                 </div>
-                <div class="filter-group">
-                    <label>Rangée:</label>
-                    <select id="filter-row" onchange="filterSpots()">
-                        <option value="all">Toutes</option>
-                        <option value="A">Rangée A</option>
-                        <option value="B">Rangée B</option>
-                        <option value="C">Rangée C</option>
-                        <option value="D">Rangée D</option>
-                        <option value="E">Rangée E</option>
-                    </select>
-                </div>
                 <div style="flex: 1;"></div>
+                <button class="btn btn-success" onclick="addNewSpot()">
+                    <i class="fas fa-plus"></i> Ajouter une place
+                </button>
                 <button class="btn btn-primary" onclick="resetAllSpots()">
                     <i class="fas fa-sync"></i> Réinitialiser tout
                 </button>
@@ -197,11 +189,11 @@
                             <thead>
                                 <tr>
                                     <th>ID</th>
-                                    <th>Rangée</th>
                                     <th>Numéro</th>
+                                    <th>Capteur ESP8266</th>
                                     <th>Statut</th>
                                     <th>Réservé par</th>
-                                    <th>Date réservation</th>
+                                    <th>Temps restant</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -305,23 +297,49 @@
                 const statusText = spot.status === 'available' ? 'Disponible' : 
                                   spot.status === 'reserved' ? 'Réservée' : 'Occupée';
                 
+                // Calculer le temps restant
+                let remainingTimeText = '-';
+                if (spot.status === 'reserved' || spot.status === 'occupied') {
+                    const remaining = ParkingData.getRemainingTime(spot.id);
+                    if (remaining && !remaining.expired) {
+                        if (remaining.hours >= 24) {
+                            const days = Math.floor(remaining.hours / 24);
+                            const hrs = remaining.hours % 24;
+                            remainingTimeText = `${days}j ${hrs}h ${remaining.minutes}m`;
+                        } else {
+                            remainingTimeText = `${remaining.hours}h ${remaining.minutes}m`;
+                        }
+                    } else if (remaining && remaining.expired) {
+                        remainingTimeText = '<span style="color: var(--danger-color);">Expirée</span>';
+                    }
+                }
+
+                // Indicateur capteur
+                const sensorStatus = spot.sensorDetected ? 
+                    '<span class="sensor-status active"><i class="fas fa-wifi"></i> Détecté</span>' :
+                    '<span class="sensor-status inactive"><i class="fas fa-wifi"></i> Libre</span>';
+                
                 return `
                     <tr>
                         <td><strong>${spot.id}</strong></td>
-                        <td>${spot.row}</td>
                         <td>${spot.number}</td>
+                        <td>${sensorStatus}</td>
                         <td><span class="badge ${statusClass}">${statusText}</span></td>
                         <td>${user ? user.name : '-'}</td>
-                        <td>${spot.reservedAt ? AdminUtils.formatDate(spot.reservedAt) : '-'}</td>
+                        <td class="countdown-cell" data-spot="${spot.id}">${remainingTimeText}</td>
                         <td>
                             <button class="btn-icon edit" onclick="openStatusModal('${spot.id}')" title="Modifier">
                                 <i class="fas fa-edit"></i>
                             </button>
                             ${spot.status !== 'available' ? `
-                                <button class="btn-icon delete" onclick="freeSpot('${spot.id}')" title="Libérer">
+                                <button class="btn-icon warning" onclick="freeSpot('${spot.id}')" title="Libérer">
                                     <i class="fas fa-unlock"></i>
                                 </button>
-                            ` : ''}
+                            ` : `
+                                <button class="btn-icon delete" onclick="removeSpot('${spot.id}')" title="Supprimer">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            `}
                         </td>
                     </tr>
                 `;
@@ -331,13 +349,9 @@
         function getFilteredSpots() {
             let spots = ParkingData.getAllSpots();
             const statusFilter = document.getElementById('filter-status').value;
-            const rowFilter = document.getElementById('filter-row').value;
 
             if (statusFilter !== 'all') {
                 spots = spots.filter(s => s.status === statusFilter);
-            }
-            if (rowFilter !== 'all') {
-                spots = spots.filter(s => s.row === rowFilter);
             }
 
             return spots;
@@ -402,6 +416,38 @@
                 AdminUtils.showNotification('Toutes les places ont été réinitialisées');
             }
         }
+
+        // Ajouter une nouvelle place
+        function addNewSpot() {
+            const newSpot = ParkingData.addSpot();
+            if (newSpot) {
+                loadStats();
+                loadParkingGrid();
+                loadSpotsTable();
+                AdminUtils.showNotification(`Place ${newSpot.id} ajoutée avec succès ! (Capteur: ${newSpot.sensorId})`, 'success');
+            }
+        }
+
+        // Supprimer une place
+        function removeSpot(spotId) {
+            if (confirm(`Voulez-vous supprimer la place ${spotId} ?\n\nNote: Seules les places disponibles peuvent être supprimées.`)) {
+                const result = ParkingData.removeSpot(spotId);
+                if (result.success) {
+                    loadStats();
+                    loadParkingGrid();
+                    loadSpotsTable();
+                    AdminUtils.showNotification(`Place ${spotId} supprimée`, 'success');
+                } else {
+                    AdminUtils.showNotification(result.message || 'Impossible de supprimer cette place', 'error');
+                }
+            }
+        }
+
+        // Mise à jour automatique des compteurs
+        setInterval(() => {
+            loadSpotsTable();
+            ParkingData.checkExpiredReservations();
+        }, 30000);
 
         function initSidebar() {
             const sidebar = document.getElementById('sidebar');

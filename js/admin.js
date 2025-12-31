@@ -177,15 +177,24 @@ const PaymentManager = {
 // Gestion des réservations
 const ReservationManager = {
     getAll() {
-        return ParkingData.getReservations();
+        // Nettoyer d'abord les réservations obsolètes
+        ParkingData.cleanupObsoleteReservations();
+        
+        // Filtrer uniquement les réservations pour des places qui existent
+        const validSpotIds = ParkingData.getAllSpots().map(s => s.id);
+        return ParkingData.getReservations().filter(r => validSpotIds.includes(r.spotId));
     },
 
     getActive() {
         return this.getAll().filter(r => r.status === 'active');
     },
 
+    getById(reservationId) {
+        return this.getAll().find(r => r.id === reservationId);
+    },
+
     cancel(reservationId) {
-        const reservations = this.getAll();
+        const reservations = ParkingData.getReservations();
         const index = reservations.findIndex(r => r.id === reservationId);
         
         if (index !== -1) {
@@ -193,12 +202,45 @@ const ReservationManager = {
             reservations[index].status = 'cancelled';
             localStorage.setItem('reservations', JSON.stringify(reservations));
             
-            // Libérer la place
-            ParkingData.updateSpot(reservation.spotId, {
-                status: 'available',
-                reservedBy: null,
-                reservedAt: null
-            });
+            // Libérer la place si elle existe
+            const spot = ParkingData.getSpotById(reservation.spotId);
+            if (spot) {
+                ParkingData.updateSpot(reservation.spotId, {
+                    status: 'available',
+                    reservedBy: null,
+                    reservedAt: null,
+                    reservationEndTime: null,
+                    duration: null,
+                    vehiclePlate: null
+                });
+            }
+            
+            return true;
+        }
+        return false;
+    },
+
+    complete(reservationId) {
+        const reservations = ParkingData.getReservations();
+        const index = reservations.findIndex(r => r.id === reservationId);
+        
+        if (index !== -1) {
+            const reservation = reservations[index];
+            reservations[index].status = 'completed';
+            localStorage.setItem('reservations', JSON.stringify(reservations));
+            
+            // Libérer la place si elle existe
+            const spot = ParkingData.getSpotById(reservation.spotId);
+            if (spot) {
+                ParkingData.updateSpot(reservation.spotId, {
+                    status: 'available',
+                    reservedBy: null,
+                    reservedAt: null,
+                    reservationEndTime: null,
+                    duration: null,
+                    vehiclePlate: null
+                });
+            }
             
             return true;
         }
@@ -229,7 +271,7 @@ const ParkingSettings = {
             maxDuration: 168,
             address: 'Aéroport de Goma, RDC',
             phone: '+243 XXX XXX XXX',
-            email: 'contact@aeroparkgoma.com'
+            email: 'aeroportgoma@gmail.com'
         };
     },
 
@@ -290,27 +332,86 @@ const AdminUtils = {
         const notification = document.createElement('div');
         notification.className = `admin-notification ${type}`;
         notification.innerHTML = `
-            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
-            <span>${message}</span>
+            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'}"></i>
+            <div class="notification-content">
+                <strong>${type === 'success' ? 'Succès' : 'Erreur'}</strong>
+                <span>${message}</span>
+            </div>
+            <button class="notification-close" onclick="this.parentElement.classList.remove('show'); setTimeout(() => this.parentElement.remove(), 300)">
+                <i class="fas fa-times"></i>
+            </button>
         `;
         notification.style.cssText = `
             position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 1rem 1.5rem;
-            background: ${type === 'success' ? 'var(--secondary-color)' : 'var(--danger-color)'};
-            color: white;
-            border-radius: var(--radius-md);
-            box-shadow: var(--shadow-lg);
+            bottom: 2rem;
+            right: 2rem;
+            padding: 1rem 1.25rem;
+            background: white;
+            color: #334155;
+            border-radius: 14px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: 1rem;
             z-index: 100000;
-            animation: slideIn 0.3s ease;
+            transform: translateX(120%);
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border-left: 4px solid ${type === 'success' ? '#10b981' : '#ef4444'};
+            max-width: 400px;
+        `;
+
+        // Styles pour le contenu
+        const content = notification.querySelector('.notification-content');
+        content.style.cssText = `
+            display: flex;
+            flex-direction: column;
+            gap: 0.125rem;
+            flex: 1;
+        `;
+        content.querySelector('strong').style.cssText = `
+            font-size: 0.9rem;
+            color: ${type === 'success' ? '#059669' : '#dc2626'};
+        `;
+        content.querySelector('span').style.cssText = `
+            font-size: 0.875rem;
+            color: #64748b;
+        `;
+
+        // Style pour l'icône
+        notification.querySelector('i:first-child').style.cssText = `
+            font-size: 1.5rem;
+            color: ${type === 'success' ? '#10b981' : '#ef4444'};
+        `;
+
+        // Style pour le bouton close
+        const closeBtn = notification.querySelector('.notification-close');
+        closeBtn.style.cssText = `
+            background: #f1f5f9;
+            border: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8;
+            transition: all 0.2s ease;
         `;
 
         document.body.appendChild(notification);
-        setTimeout(() => notification.remove(), 3000);
+        
+        // Trigger animation
+        requestAnimationFrame(() => {
+            notification.classList.add('show');
+            notification.style.transform = 'translateX(0)';
+        });
+
+        // Auto-remove after 4 seconds
+        setTimeout(() => {
+            notification.style.transform = 'translateX(120%)';
+            setTimeout(() => notification.remove(), 400);
+        }, 4000);
     }
 };
 

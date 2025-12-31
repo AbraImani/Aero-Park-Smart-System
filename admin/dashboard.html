@@ -290,6 +290,9 @@
 
         // Initialisation
         document.addEventListener('DOMContentLoaded', function() {
+            // Nettoyer les réservations obsolètes au chargement
+            ParkingData.cleanupObsoleteReservations();
+            
             initDashboard();
             initSidebar();
             updateCurrentDate();
@@ -348,12 +351,17 @@
         }
 
         function loadRecentReservations() {
+            // Nettoyer d'abord les réservations obsolètes
+            ParkingData.cleanupObsoleteReservations();
+            
             const reservations = ParkingData.getReservations();
             const users = JSON.parse(localStorage.getItem('aeropark_users') || '[]');
+            const validSpotIds = ParkingData.getAllSpots().map(s => s.id);
             const tbody = document.getElementById('recent-reservations');
 
-            // Prendre les 5 dernières
-            const recent = reservations.slice(-5).reverse();
+            // Filtrer uniquement les réservations valides et prendre les 5 dernières
+            const validReservations = reservations.filter(r => validSpotIds.includes(r.spotId));
+            const recent = validReservations.slice(-5).reverse();
 
             if (recent.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Aucune réservation</td></tr>';
